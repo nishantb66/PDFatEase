@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hearing PDF</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Modern and Stylish Additions */
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6;
+      }
+
+      .highlight {
+        background-color: #fef08a; /* A more subtle yellow highlight */
+        transition: background-color 0.3s ease;
+      }
+
+      .card {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        max-width: 700px;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+      }
+
+      .highlight-animation {
+        animation: highlightFade 0.5s ease-in-out;
+      }
+
+      @keyframes highlightFade {
+        from {
+          background-color: #fef08a;
+        }
+        to {
+          background-color: transparent;
+        }
+      }
+
+      /* Enhancements for audio control */
+      audio {
+        width: 100%;
+        margin-top: 20px;
+        outline: none;
+        border-radius: 8px;
+        background-color: #e5e7eb;
+      }
+
+      /* Scrollable PDF content box */
+      .pdf-content {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 1rem;
+      }
+
+      .pdf-content::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .pdf-content::-webkit-scrollbar-track {
+        background: #f3f4f6;
+      }
+
+      .pdf-content::-webkit-scrollbar-thumb {
+        background-color: #cbd5e0;
+        border-radius: 10px;
+        border: 2px solid #f3f4f6;
+      }
+    </style>
+
+    <script>
+      let currentIndex = 0;
+      let lines = {{ lines | tojson }};
+
+      function highlightLine() {
+        const lineElements = document.querySelectorAll(".line");
+        lineElements.forEach((el, idx) => {
+          if (idx === currentIndex) {
+            el.classList.add("highlight");
+          } else {
+            el.classList.remove("highlight");
+          }
+        });
+        currentIndex++;
+        if (currentIndex >= lines.length) {
+          clearInterval(interval);
+        }
+      }
+
+      const interval = setInterval(highlightLine, 3000); // Adjust the timing as needed
+    </script>
+  </head>
+
+  <body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-xl w-full text-center mb-12">
+        <h2 class="text-4xl font-extrabold text-gray-900">
+          Hearing PDF
+        </h2>
+        <p class="mt-4 text-lg text-gray-500">
+          Enjoy your PDF narrated by AI. Follow along as we highlight the text for you.
+        </p>
+      </div>
+
+      <!-- PDF Content Display -->
+      <div class="card pdf-content bg-white p-8 shadow-lg rounded-lg mb-8 text-left">
+        <div class="text-lg text-gray-900 space-y-4">
+          {% for line in lines %}
+          <p class="line">{{ line }}</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Audio Controls -->
+      <audio controls autoplay>
+        <source src="{{ url_for('main.uploaded_file', filename=audio_file) }}" type="audio/mp3" />
+        Your browser does not support the audio element.
+      </audio>
+    </div>
+  </body>
+</html>

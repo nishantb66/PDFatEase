@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #8e44ad, #3498db);
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .welcome-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3.5rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 30px;
+            box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(-50px);
+        }
+
+        .btn-primary {
+            background-color: #ff6347;
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            background-color: #e5533d;
+            transform: scale(1.1) translateY(-3px);
+        }
+
+        nav ul li a {
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: #ffea00;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            -webkit-backdrop-filter: blur(10px);
+            /* Added for Safari support */
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        footer {
+            background: rgba(0, 0, 0, 0.3);
+            -webkit-backdrop-filter: blur(10px);
+            /* Added for Safari support */
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="p-6">
+        <nav class="flex justify-between items-center">
+            <div class="text-white text-3xl font-extrabold"></div>
+            <ul class="flex space-x-10">
+                <li><a href="#" class="text-white hover:text-yellow-400">About</a></li>
+                <li><a href="#" class="text-white hover:text-yellow-400">Features</a></li>
+                <li><a href="#" class="text-white hover:text-yellow-400">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="flex items-center justify-center h-screen">
+        <div class="welcome-container">
+            <h1 class="text-6xl font-extrabold text-gray-900 mb-8">PDFatEase - One Stop Shop for PDFs</h1>
+            <p class="text-gray-700 text-xl mb-10">Explore the features of our platform and discover how easy it is to
+                manage your PDF files with style and efficiency.</p>
+            <a href="{{ url_for('main.index') }}">
+                <button class="btn-primary hover:shadow-2xl">Get Started</button>
+            </a>
+        </div>
+    </main>
+
+    <footer class="p-6 text-center text-white mt-8">
+        <p>&copy; 2024 Nishant. All Rights Reserved.</p>
+    </footer>
+</body>
+
+</html>
