@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with a PDF Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-indigo-600 min-h-screen flex flex-col">
+
+    <!-- Sidebar for PDF Tool Sections -->
+    <div class="flex flex-row min-h-screen">
+        <!-- Left Sidebar -->
+        <div class="w-1/4 bg-indigo-700 text-white p-8 space-y-4">
+            <h1 class="text-xl font-bold mb-6">PDF Tool Sections</h1>
+            <nav class="space-y-2">
+                <a href="http://192.168.29.55:8080/index#encrypt-section" class="block text-lg hover:bg-indigo-500 p-2 rounded">Encrypt/Decrypt PDFs</a>
+                <a href="http://192.168.29.55:8080/index#watermark-section" class="block text-lg hover:bg-indigo-500 p-2 rounded">Watermark PDFs</a>
+                <a href="http://192.168.29.55:8080/index#sign-section" class="block text-lg hover:bg-indigo-500 p-2 rounded">Sign PDFs</a>
+                <a href="http://192.168.29.55:8080/index#compress-section" class="block text-lg hover:bg-indigo-500 p-2 rounded">Compress/Merge PDFs</a>
+                <a href="http://192.168.29.55:8080/index#split-section" class="block text-lg hover:bg-indigo-500 p-2 rounded">Split PDFs</a>
+                <a href="http://192.168.29.55:8080/index#delete-pages-section" class="block text-lg hover:bg-indigo-500 p-2 rounded">Delete Pages</a>
+                <a href="http://192.168.29.55:8080/index#convert-to-word" class="block text-lg hover:bg-indigo-500 p-2 rounded">PDF to Word</a>
+                <a href="http://192.168.29.55:8080/index#add-page-numbers-section" class="block text-lg hover:bg-indigo-500 p-2 rounded">Number Pages</a>
+                <a href="http://192.168.29.55:8080/hear_pdf" class="block text-lg hover:bg-indigo-500 p-2 rounded">Hear a PDF</a>
+                <a href="http://192.168.29.55:8080/pdf_metadata" class="block text-lg hover:bg-indigo-500 p-2 rounded">PDF Metadata</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-grow bg-indigo-50 p-12">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-4xl font-bold text-indigo-900">Chat with a PDF Document</h1>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="bg-white p-8 rounded-lg shadow-lg mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Upload PDF</h2>
+                <form id="upload-form" enctype="multipart/form-data">
+                    <input type="file" id="file-input" name="file"
+                        class="block w-full p-3 mb-4 border border-gray-300 rounded-lg">
+                    <button type="submit" class="bg-indigo-700 text-white py-2 px-6 rounded-lg">Upload</button>
+                </form>
+                <div id="upload-status" class="text-green-500 mt-4"></div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Ask a Question about the PDF</h2>
+                <form id="ask-form">
+                    <input type="text" id="query" placeholder="Ask your question..."
+                        class="block w-full p-3 mb-4 border border-gray-300 rounded-lg">
+                    <button type="submit" class="bg-indigo-700 text-white py-2 px-6 rounded-lg">Ask</button>
+                </form>
+                <div id="response" class="text-gray-800 mt-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('file-input');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                document.getElementById('upload-status').textContent = result.error;
+            } else {
+                document.getElementById('upload-status').textContent = result.message;
+            }
+        });
+
+        document.getElementById('ask-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const query = document.getElementById('query').value;
+            const formData = new FormData();
+            formData.append('query', query);
+
+            const response = await fetch('/ask', {
+                method: 'POST',
+                body: new URLSearchParams(formData),
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                document.getElementById('response').textContent = result.error;
+            } else {
+                document.getElementById('response').textContent = result.response;
+            }
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure PDF App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-50px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .close:hover {
+            color: red;
+        }
+
+        .flash-message {
+            animation: fadeOut 5s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+                display: none;
+            }
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .strength-meter {
+            height: 6px;
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 3px;
+            margin-top: 0.5rem;
+        }
+
+        .strength-meter-fill {
+            height: 100%;
+            width: 0;
+            background-color: #dc2626;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .strength-weak {
+            width: 33%;
+            background-color: #dc2626;
+        }
+
+        .strength-medium {
+            width: 66%;
+            background-color: #fbbf24;
+        }
+
+        .strength-strong {
+            width: 100%;
+            background-color: #16a34a;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        }
+
+        .card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Metadata Popup */
+        .metadata-popup {
+            position: fixed;
+            top: 10%;
+            right: 10%;
+            background-color: white;
+            width: 350px;
+            max-width: 100%;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .metadata-popup.active {
+            display: block;
+        }
+
+        .metadata-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .metadata-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .metadata-close {
+            cursor: pointer;
+            color: #dc2626;
+            font-size: 1.5rem;
+        }
+
+        .metadata-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .metadata-list li {
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        /* Side Navigation Styling */
+        .side-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #4f46e5;
+            padding-top: 20px;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .side-nav.open {
+            transform: translateX(0);
+        }
+
+        .side-nav a {
+            padding: 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
+            transition: 0.3s;
+        }
+
+        .side-nav a:hover {
+            background-color: #6366f1;
+        }
+
+        .side-nav h3 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 110;
+            background-color: #4f46e5;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            background-color: #6366f1;
+        }
+
+        /* For responsive design */
+        @media screen and (max-width: 768px) {
+            .side-nav {
+                width: 200px;
+            }
+
+            .side-nav a {
+                font-size: 16px;
+            }
+        }
+
+        .highlight {
+            color: indigo;
+        }
+
+        /* Additional styling for the back button */
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #4f46e5;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .back-btn:hover {
+            background-color: #6366f1;
+        }
+
+    </style>
+
+    <script>
+        function showModal() {
+            const modal = document.getElementById("myModal");
+            modal.classList.add("show");
+        }
+
+        function closeModal() {
+            const modal = document.getElementById("myModal");
+            modal.classList.remove("show");
+        }
+
+        function downloadFileAndCloseModal() {
+            closeModal();
+            setTimeout(function () {
+                window.location.reload();
+            }, 1000);
+        }
+
+        function togglePassword() {
+            const passwordField = document.getElementById("password");
+            const toggleIcon = document.getElementById("togglePassword");
+            const type =
+                passwordField.getAttribute("type") === "password"
+                    ? "text"
+                    : "password";
+            passwordField.setAttribute("type", type);
+
+            toggleIcon.classList.toggle("fa-eye");
+            toggleIcon.classList.toggle("fa-eye-slash");
+        }
+
+        function updatePasswordStrength() {
+            const password = document.getElementById("password").value;
+            const strengthMeterFill = document.getElementById(
+                "strength-meter-fill"
+            );
+
+            if (
+                password.length >= 8 &&
+                /[A-Z]/.test(password) &&
+                /\d/.test(password)
+            ) {
+                strengthMeterFill.classList.remove(
+                    "strength-weak",
+                    "strength-medium"
+                );
+                strengthMeterFill.classList.add("strength-strong");
+            } else if (password.length >= 6 && /[A-Za-z]/.test(password)) {
+                strengthMeterFill.classList.remove(
+                    "strength-weak",
+                    "strength-strong"
+                );
+                strengthMeterFill.classList.add("strength-medium");
+            } else {
+                strengthMeterFill.classList.remove(
+                    "strength-medium",
+                    "strength-strong"
+                );
+                strengthMeterFill.classList.add("strength-weak");
+            }
+        }
+
+        setTimeout(function () {
+            var flashMessages = document.querySelectorAll(".flash-message");
+            flashMessages.forEach(function (message) {
+                message.style.display = "none";
+            });
+        }, 5000);
+
+        function hideFlashMessage() {
+            setTimeout(function () {
+                const flashMessage = document.getElementById("flash-message");
+                if (flashMessage) {
+                    flashMessage.style.display = "none";
+                }
+            }, 3000);
+        }
+
+        function toggleMetadataPopup() {
+            const metadataPopup = document.getElementById("metadata-popup");
+            metadataPopup.classList.toggle("active");
+        }
+
+        function toggleChatPdfPopup() {
+            const popup = document.getElementById("chat-pdf-popup");
+            popup.classList.toggle("active");
+        }
+
+        function highlightSection(sectionId) {
+            const sectionTitle = document.querySelector(sectionId + " h2");
+            let count = 0;
+
+            // Function to toggle highlight
+            const interval = setInterval(() => {
+                sectionTitle.classList.toggle("highlight");
+                count++;
+
+                if (count === 6) {
+                    clearInterval(interval);
+                }
+            }, 500);
+        }
+
+        function smoothScroll(target) {
+            document.querySelector(target).scrollIntoView({ behavior: "smooth" });
+
+            // Highlight the heading of the corresponding section
+            highlightSection(target);
+        }
+
+        function toggleSideNav() {
+            const sideNav = document.querySelector(".side-nav");
+            sideNav.classList.toggle("open");
+        }
+    </script>
+</head>
+
+<body class="gradient-bg">
+    <!-- Menu Toggle Button -->
+    <div class="menu-toggle" onclick="toggleSideNav()">
+        <i class="fas fa-bars"></i>
+    </div>
+
+     <!-- Back button -->
+    <a href="{{ url_for('main.welcome') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Welcome
+    </a>
+
+    <!-- Side Navigation Bar -->
+    <div class="side-nav">
+        <h3>HOME</h3>
+        <a href="#encrypt-section" onclick="smoothScroll('#encrypt-section')">Encrypt/Decrypt PDFs</a>
+        <a href="#watermark-section" onclick="smoothScroll('#watermark-section')">Watermark a PDFs</a>
+        <a href="#sign-section" onclick="smoothScroll('#sign-section')">Sign PDFs</a>
+        <a href="#compress-section" onclick="smoothScroll('#compress-section')">Compress/Merge PDFs</a>
+        <a href="#split-section" onclick="smoothScroll('#split-section')">Split PDFs</a>
+        <a href="#delete-pages-section" onclick="smoothScroll('#delete-pages-section')">Delete Pages</a>
+        <a href="#convert-to-word" onclick="smoothScroll('#convert-to-word')">Pdf to Word</a>
+        <a href="#add-page-numbers-section" onclick="smoothScroll('#add-page-numbers-section')">Number Pages</a>
+        <a href="http://192.168.29.55:5000/">Chat with Pdf</a>
+        <a href="/hear_pdf">Hear a PDF</a>
+        <a href="/pdf_metadata">PDF Metadata</a>
+    </div>
+
+    <div class="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <!-- Flash Message -->
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div id="flash-message" class="mb-4 p-4 rounded-md bg-red-100 text-red-700 max-w-md w-full">
+            {% for category, message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+
+        <!-- Button to trigger metadata popup -->
+        <button class="fixed top-5 right-5 bg-indigo-600 text-white py-2 px-4 rounded-md"
+            onclick="toggleMetadataPopup()">
+            Contributor
+        </button>
+
+        <!-- Metadata Popup -->
+        <div id="metadata-popup" class="metadata-popup">
+            <div class="metadata-header">
+                <h2>Nishant Baruah</h2>
+                <span class="metadata-close" onclick="toggleMetadataPopup()">&times;</span>
+            </div>
+            <ul class="metadata-list">
+                <li><strong>Development</strong></li>
+                <li><strong>Logic</strong></li>
+                <li><strong>Designing</strong></li>
+            </ul>
+        </div>
+
+        <!-- Encrypt/Decrypt Box -->
+        <div id="encrypt-section" class="max-w-md w-full space-y-8">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Encrypt/Decrypt PDFs
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Encrypt or decrypt multiple PDF files with ease. Set expiration for
+                    time-sensitive files.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-[#b2c4f5] p-8 shadow-lg rounded-lg card" action="/" method="POST"
+                enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="files" class="block text-sm font-medium text-gray-800">Upload PDF Files (Max:
+                            4)</label>
+                        <input id="files" name="files" type="file" accept="application/pdf" multiple required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" />
+                    </div>
+
+                    <div class="mt-4 password-wrapper">
+                        <label for="password" class="block text-sm font-medium text-gray-800">Enter Password</label>
+                        <input id="password" name="password" type="password" oninput="updatePasswordStrength()" required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" />
+                        <i id="togglePassword" class="fas fa-eye toggle-password text-gray-600"
+                            onclick="togglePassword()"></i>
+                        <div class="strength-meter">
+                            <div id="strength-meter-fill" class="strength-meter-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <label for="expiration_date" class="block text-sm font-medium text-gray-800">Expiration Date
+                            (Optional)</label>
+                        <input id="expiration_date" name="expiration_date" type="date"
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" />
+                    </div>
+
+                    <div class="mt-6">
+                        <label for="expiration_time" class="block text-sm font-medium text-gray-800">Expiration Time
+                            (Optional)</label>
+                        <input id="expiration_time" name="expiration_time" type="time"
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-800 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white" />
+                    </div>
+
+                    <div class="mt-6">
+                        <label for="action" class="block text-sm font-medium text-gray-800">Action</label>
+                        <select id="action" name="action" required
+                            class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="encrypt">Encrypt PDF</option>
+                            <option value="decrypt">Decrypt PDF</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Proceed
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Watermark PDFs Box -->
+        <div id="watermark-section" class="max-w-md w-full space-y-8 mt-12">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Watermark PDFs
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Add custom watermarks to your PDF files.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg card" action="/watermark" method="POST"
+                enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="watermark_files" class="block text-sm font-medium text-gray-700">Upload PDF Files
+                            (Max: 4)</label>
+                        <input id="watermark_files" name="files" type="file" accept="application/pdf" multiple required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="watermark_text" class="block text-sm font-medium text-gray-700">Watermark
+                            Text</label>
+                        <input id="watermark_text" name="watermark_text" type="text" required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Apply Watermark
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sign PDFs Box -->
+        <div id="sign-section" class="max-w-md w-full space-y-8 mt-12">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Sign PDFs
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Add digital signatures to your PDF files.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg card" action="/sign" method="POST"
+                enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="signature_files" class="block text-sm font-medium text-gray-700">Upload PDF Files
+                            (Max: 4)</label>
+                        <input id="signature_files" name="files" type="file" accept="application/pdf" multiple required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="signature_text" class="block text-sm font-medium text-gray-700">Signature
+                            Text</label>
+                        <input id="signature_text" name="signature_text" type="text"
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="signature_image" class="block text-sm font-medium text-gray-700">Upload Signature
+                            Image (Optional)</label>
+                        <input id="signature_image" name="signature_image" type="file" accept="image/*"
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Apply Signature
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Compress/Merge PDFs Box -->
+        <div id="compress-section" class="max-w-md w-full space-y-8 mt-12">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Compress/Merge PDFs
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Compress or merge multiple PDF files into one.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg card" action="/compress" method="POST"
+                enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="compress_files" class="block text-sm font-medium text-gray-700">Upload PDF Files
+                            (Max: 4)</label>
+                        <input id="compress_files" name="files" type="file" accept="application/pdf" multiple required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="compress_action" class="block text-sm font-medium text-gray-700">Action</label>
+                        <select id="compress_action" name="compress_action" required
+                            class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="compress">Compress PDF</option>
+                            <option value="merge">Merge PDFs</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Proceed
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Split PDFs Box -->
+        <div id="split-section" class="max-w-md w-full space-y-8 mt-12">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Split PDFs
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Split your PDF into multiple parts by specifying page numbers.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg card" action="/split" method="POST"
+                enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="split_files" class="block text-sm font-medium text-gray-700">
+                            Upload PDF Files (Max: 4)
+                        </label>
+                        <input id="split_files" name="files" type="file" accept="application/pdf" multiple required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="split_pages" class="block text-sm font-medium text-gray-700">
+                            Enter Page Numbers (comma-separated)
+                        </label>
+                        <input id="split_pages" name="split_pages" type="text" placeholder="e.g., 2,5,7" required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Split PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Delete Pages from PDF Box -->
+        <div id="delete-pages-section" class="max-w-md w-full space-y-8 mt-12">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Delete Pages from PDF
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Remove specific pages from your PDF.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg card" action="/delete_pages" method="POST"
+                enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="delete_pages_files" class="block text-sm font-medium text-gray-700">Upload PDF Files
+                            (Max: 4)</label>
+                        <input id="delete_pages_files" name="files" type="file" accept="application/pdf" multiple
+                            required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="pages_to_delete" class="block text-sm font-medium text-gray-700">Page Numbers to
+                            Delete (comma separated)</label>
+                        <input id="pages_to_delete" name="pages_to_delete" type="text" placeholder="e.g. 2, 5, 7"
+                            required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Delete Pages
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Convert PDF to Word Box -->
+        <div id="convert-to-word" class="max-w-md w-full space-y-8 mt-12">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Convert PDF to Word
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Convert your PDF files into editable Word documents.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg card" action="/convert_pdf_to_word"
+                method="POST" enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="convert_files" class="block text-sm font-medium text-gray-700">Upload PDF Files
+                            (Max: 4)</label>
+                        <input id="convert_files" name="files" type="file" accept="application/pdf" multiple required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Convert to Word
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Add Page Numbers to PDF -->
+        <div id="add-page-numbers-section" class="max-w-md w-full space-y-8 mt-12">
+            <div>
+                <h2 class="mt-6 text-center text-4xl font-extrabold text-white">
+                    Add Page Numbers to PDF
+                </h2>
+                <p class="mt-2 text-center text-lg text-gray-200">
+                    Upload a PDF and add page numbers at the bottom right corner.
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6 bg-white p-8 shadow-lg rounded-lg card" action="/add_page_numbers" method="POST"
+                enctype="multipart/form-data">
+                <div class="rounded-md shadow-sm">
+                    <div>
+                        <label for="file" class="block text-sm font-medium text-gray-700">Upload PDF</label>
+                        <input id="file" name="file" type="file" accept="application/pdf" required
+                            class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Add Page Numbers
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal popup box
+        <div id="myModal" class="modal">
+            <div class="modal-content p-8 bg-white rounded-lg shadow-lg text-center">
+                <span class="close text-red-500 text-xl cursor-pointer" onclick="closeModal()">&times;</span>
+                <h3 class="text-2xl font-bold text-gray-900 mt-2">
+                    Files Processed Successfully
+                </h3>
+                <p class="text-gray-600 mt-2 mb-6">
+                    Your files have been processed and are ready to download.
+                </p>
+                {% if encrypted_pdf %}
+                <a href="{{ url_for('main.download_file', filename=encrypted_pdf.split('/')[-1]) }}"
+                    onclick="downloadFileAndCloseModal()"
+                    class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+                    Download Processed PDFs
+                </a>
+                {% endif %}
+            </div>
+        </div> -->
+
+        <!-- Trigger modal if encrypted_pdf exists -->
+        {% if encrypted_pdf %}
+        <script>
+            showModal();
+        </script>
+        {% endif %}
+    </div>
+</body>
+
+</html>
